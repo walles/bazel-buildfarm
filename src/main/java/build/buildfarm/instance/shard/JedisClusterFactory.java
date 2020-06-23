@@ -19,7 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -143,7 +143,7 @@ public class JedisClusterFactory {
     return () -> {
       try {
         Set<HostAndPort> hostAndPorts =
-        java.util.List.of(InetAddress.getAllByName(redisUri.getHost())).stream()
+          Arrays.stream(InetAddress.getAllByName(redisUri.getHost()))
             .map(a -> new HostAndPort(a.getHostAddress(), redisUri.getPort()))
             .collect(Collectors.toSet());
 
