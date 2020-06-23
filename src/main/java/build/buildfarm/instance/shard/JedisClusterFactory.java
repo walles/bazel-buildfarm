@@ -146,7 +146,7 @@ public class JedisClusterFactory {
     return () -> {
       try {
         Set<HostAndPort> hostAndPorts =
-        List.of(InetAddress.getAllByName(redisUri.getHost())).stream()
+        java.util.List.of(InetAddress.getAllByName(redisUri.getHost())).stream()
             .map(a -> new HostAndPort(a.getHostAddress(), redisUri.getPort()))
             .collect(Collectors.toSet());
 
