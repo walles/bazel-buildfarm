@@ -195,7 +195,7 @@ public class IOUtils {
   public static List<NamedFileKey> listDirentSorted(Path path, FileStore fileStore)
       throws IOException {
     final List<NamedFileKey> dirents;
-    if (fileStore.supportsFileAttributeView("posix")) {
+    if (fileStore.supportsFileAttributeView("posix") && !System.getProperty("os.name").equals("Mac OS X")) {
       dirents = ffiReaddir(libc.get(), runtime(), path);
     } else {
       dirents = listNIOdirentSorted(path);
