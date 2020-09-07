@@ -1,0 +1,14 @@
+# Documentation: http://docs/backstage/defining-components-using-yaml/
+
+id: bazel-buildfarm
+description: Bazel remote caching and execution system
+system: buildfarm
+owner: client-build
+visibility: private
+dependencies: []
+
+facts:
+  service_discovery: [bazel-buildfarm]
+  role: bazelbuildfarm
+  lifecycle: experimental
+  component_type: service
