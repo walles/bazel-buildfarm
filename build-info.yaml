@@ -1,0 +1,52 @@
+# build-info.yaml
+version: 2
+
+pipelines:
+  - pipeline: "Review build"
+    ref: "pr/.*/merge"
+    stages:
+      - stage: "Build and test"
+        tasks:
+          - task: "build"
+            steps:
+              - action: "gcr.io/action-containers/bazel:3.2.0-1"
+                entrypoint: '/bin/bash'
+                args:
+                  - 'bazel'
+                  - 'build'
+                  - '//src/main/java/build/buildfarm:all'
+          - task: "test"
+              steps:
+                - action: "gcr.io/action-containers/bazel:3.2.0-1"
+                  entrypoint: '/bin/bash'
+                  args:
+                    - 'bazel'
+                    - 'test'
+                    - '//src/main/java/build/buildfarm:all'
+  - pipeline: "Master build"
+    ref: "master"
+    stages:
+      - stage: "Build, test and publish"
+          tasks:
+            - task: "build"
+              steps:
+                - action: "gcr.io/action-containers/bazel:3.2.0-1"
+                  entrypoint: '/bin/bash'
+                  args:
+                    - 'bazel'
+                    - 'build'
+                    - '//src/main/java/build/buildfarm:all'
+            - task: "test"
+                steps:
+                  - action: "gcr.io/action-containers/bazel:3.2.0-1"
+                    entrypoint: '/bin/bash'
+                    args:
+                      - 'bazel'
+                      - 'test'
+                      - '//src/main/java/build/buildfarm:all'
+            - task: "publish"
+                steps:
+                  - action: "gcr.io/action-containers/git:2.24.1-1"
+                    entrypoint: '/bin/bash'
+                    args:
+                      - 'zip-and-push-to-artifactory.sh'
