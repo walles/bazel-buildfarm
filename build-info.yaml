@@ -9,44 +9,44 @@ pipelines:
         tasks:
           - task: "build"
             steps:
-              - action: "gcr.io/action-containers/bazel:3.2.0-1"
+              - action: "gcr.io/action-containers/bazel:3.3.1-1"
                 entrypoint: '/bin/bash'
                 args:
                   - 'bazel'
                   - 'build'
                   - '//src/main/java/build/buildfarm:all'
           - task: "test"
-              steps:
-                - action: "gcr.io/action-containers/bazel:3.2.0-1"
-                  entrypoint: '/bin/bash'
-                  args:
-                    - 'bazel'
-                    - 'test'
-                    - '//src/main/java/build/buildfarm:all'
+            steps:
+              - action: "gcr.io/action-containers/bazel:3.3.1-1"
+                entrypoint: '/bin/bash'
+                args:
+                  - 'bazel'
+                  - 'test'
+                  - '//src/main/java/build/buildfarm:all'
   - pipeline: "Master build"
     ref: "master"
     stages:
       - stage: "Build, test and publish"
-          tasks:
-            - task: "build"
-              steps:
-                - action: "gcr.io/action-containers/bazel:3.2.0-1"
-                  entrypoint: '/bin/bash'
-                  args:
-                    - 'bazel'
-                    - 'build'
-                    - '//src/main/java/build/buildfarm:all'
-            - task: "test"
-                steps:
-                  - action: "gcr.io/action-containers/bazel:3.2.0-1"
-                    entrypoint: '/bin/bash'
-                    args:
-                      - 'bazel'
-                      - 'test'
-                      - '//src/main/java/build/buildfarm:all'
-            - task: "publish"
-                steps:
-                  - action: "gcr.io/action-containers/git:2.24.1-1"
-                    entrypoint: '/bin/bash'
-                    args:
-                      - 'zip-and-push-to-artifactory.sh'
+        tasks:
+          - task: "build"
+            steps:
+              - action: "gcr.io/action-containers/bazel:3.3.1-1"
+                entrypoint: '/bin/bash'
+                args:
+                  - 'bazel'
+                  - 'build'
+                  - '//src/main/java/build/buildfarm:all'
+          - task: "test"
+            steps:
+              - action: "gcr.io/action-containers/bazel:3.3.1-1"
+                entrypoint: '/bin/bash'
+                args:
+                  - 'bazel'
+                  - 'test'
+                  - '//src/main/java/build/buildfarm:all'
+          - task: "publish"
+            steps:
+              - action: "gcr.io/action-containers/git:2.24.1-1"
+                entrypoint: '/bin/bash'
+                args:
+                  - 'zip-and-push-to-artifactory.sh'
