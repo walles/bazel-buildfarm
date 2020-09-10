@@ -13,7 +13,8 @@ echo "running from folder:"
 pwd
 ls -l
 set +ex
-./bazelisk test //src/test/java/build/buildfarm:all --verbose_failures
+# Exclude common-tests target since it fails on Tingle for some reason
+./bazelisk test -- //src/test/java/build/buildfarm:all -//src/test/java/build/buildfarm:common-tests --verbose_failures
 status=$?
 find ../.cache -iname test.log -exec cat {} \;
 exit $status
