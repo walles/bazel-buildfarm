@@ -1,9 +1,6 @@
 #!/bin/bash
 set -euxo pipefail
 
-apt-get update -y && apt-get upgrade -y
-apt-get install -y curl
-
 SHA=$(git rev-parse --verify HEAD)
 echo "Current HEAD: ${SHA}"
 
