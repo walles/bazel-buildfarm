@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euxo pipefail
 
+apk add curl
+
 SHA=$(git rev-parse --verify HEAD)
 echo "Current HEAD: ${SHA}"
 
