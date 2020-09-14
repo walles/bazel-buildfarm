@@ -1,4 +1,9 @@
 bazel-*
 .ijwb/
-.vscode/
 java_formatter.jar
+
+# VS Code
+.vscode/
+# IntelliJ
+.idea/
+*.iml

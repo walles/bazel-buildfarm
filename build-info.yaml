@@ -1,0 +1,34 @@
+# build-info.yaml
+version: 2
+
+pipelines:
+  - pipeline: "Review build"
+    ref: "pr/.*/merge"
+    stages:
+      - stage: "Build and test"
+        tasks:
+          - task: "build and test"
+            steps:
+              - step: 'build and test'
+                action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
+                entrypoint: '/bin/bash'
+                args:
+                  - './build.sh'
+  - pipeline: "Master build"
+    ref: "master"
+    stages:
+      - stage: "Build, test and publish"
+        tasks:
+          - task: "build and test"
+            steps:
+              - step: 'build and test'
+                action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
+                entrypoint: '/bin/bash'
+                args:
+                  - './build.sh'
+          - task: "publish"
+            steps:
+              - action: "gcr.io/action-containers/git:2.24.1-1"
+                entrypoint: '/bin/bash'
+                args:
+                  - 'zip-and-push-to-artifactory.sh'
