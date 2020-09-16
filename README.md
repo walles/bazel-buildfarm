@@ -1,6 +1,59 @@
 [![Build status](https://badge.buildkite.com/45f4fd4c0cfb95f7705156a4119641c6d5d6c310452d6e65a4.svg?branch=master)](https://buildkite.com/bazel/buildfarm-postsubmit)
 
-# Bazel Buildfarm
+# Bazel Buildfarm (fork)
+
+## Words of caution
+
+Before going any further, this repository is a fork of the upstream
+[bazel-buildfarm](https://github.com/bazelbuild/bazel-buildfarm) repository.
+Ideally all changes should be made in that upstream repository and not in this
+fork.
+
+## How does our (Client Build) setup work
+
+This repository is a fork of [bazel-buildfarm](https://github.com/bazelbuild/bazel-buildfarm),
+changes ideally should be merged into upstream instead of this repository. Use this
+for changes that can't make into upstream for whatever reason, but the goal should be
+to merge it in upstream.
+
+This repo reasons of being:
+
+* We need changes specific due to our environment
+* Having it in GHE is better than having a fork in the public GitHub since it allows all the team to properly own it.
+* We can have CI and deploys for our changes.
+
+### Figuring out which version to use
+
+Check latest commits in this repository and go over to
+[buildfarm artifacts in Artifactory](https://artifactory.spotify.net/ui/repos/tree/General/client-infrastructure%2Fbazel%2Fbuildfarm)
+to find the matching artifact.
+
+### Contributing
+
+Contribute to this repo as you would to any other:
+1. Clone the repo
+1. Have your changes on a branch
+1. Create a Pull Request
+1. Merge if it passes CI and you get an approving review
+1. The newest version of `buildfarm` will end up in Artifactory tagged with the SHA of the PR merge commit
+    * It will be available in [client-infrastructure/bazel/buildfarm](https://artifactory.spotify.net/ui/repos/tree/General/client-infrastructure%2Fbazel%2Fbuildfarm)
+
+### Synchronizing with upstream
+
+This repository needs to be manually synchronized with upstream. To do so:
+
+1. Clone this repo -- `git clone git@ghe.spotify.net:build/bazel-buildfarm.git`
+1. Add upstream as a remote -- `git remote add upstream https://github.com/bazelbuild/bazel-buildfarm.git`
+1. Pull from upstream and add fork changes on top -- `git pull -r upstream master`
+1. Fix conflicts if needed
+1. Push the resulting master to our fork -- `git push -f origin master`
+
+Note that pushing with `-f/--force` is needed since we are rewriting the git history
+by applying our fork changes on top of upstream, and we can't really create Pull Requests
+out of upstream changes either. This means this operation is risky and is another reason
+why all changes should live in upstream.
+
+# The original README:
 
 This repository hosts the [Bazel](https://bazel.build) remote caching and execution system.
 
