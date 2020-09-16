@@ -17,7 +17,7 @@ RESPONSE_CODE=$(curl -m300 --head --write-out '%{http_code}' --silent --output /
 
 if [ "$RESPONSE_CODE" = 404 ]; then
   echo "Publishing ${ZIP_FILE} to Artifactory"
-  curl --fail -m300 -X PUT "https://artifactory.spotify.net/artifactory/cerbero-tests/from-gabriel/${ZIP_FILE}" -T "${ZIP_FILE}"
+  curl --fail -m300 -X PUT "https://artifactory.spotify.net/artifactory/client-infrastructure/bazel/buildfarm/${ZIP_FILE}" -T "${ZIP_FILE}"
 else
   echo "Skipping since artifact is already published"
 fi
