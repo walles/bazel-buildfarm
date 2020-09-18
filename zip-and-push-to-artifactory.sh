@@ -13,7 +13,7 @@ git archive --format=zip HEAD -o "${ZIP_FILE}"
 
 # Check if SHA is already present in artifactory for whatever reason
 echo "Checking if ${ZIP_FILE} is already in Artifactory"
-RESPONSE_CODE=$(curl -m300 --head --write-out '%{http_code}' --silent --output /dev/null "https://artifactory.spotify.net/artifactory/cerbero-tests/from-gabriel/${ZIP_FILE}")
+RESPONSE_CODE=$(curl -m300 --head --write-out '%{http_code}' --silent --output /dev/null "https://artifactory.spotify.net/artifactory/client-infrastructure/bazel/buildfarm/${ZIP_FILE}")
 
 if [ "$RESPONSE_CODE" = 404 ]; then
   echo "Publishing ${ZIP_FILE} to Artifactory"
