@@ -33,6 +33,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptor;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
+import io.grpc.protobuf.services.ProtoReflectionService;
 import io.grpc.services.HealthStatusManager;
 import io.grpc.util.TransmitStatusRuntimeExceptionInterceptor;
 import java.io.IOException;
@@ -108,6 +109,7 @@ public class BuildFarmServer extends LoggingMain {
             .addService(new OperationQueueService(instances))
             .addService(new OperationsService(instances))
             .addService(new AdminService(config.getAdminConfig(), instances))
+            .addService(ProtoReflectionService.newInstance())
             .intercept(TransmitStatusRuntimeExceptionInterceptor.instance())
             .intercept(headersInterceptor)
             .build();
