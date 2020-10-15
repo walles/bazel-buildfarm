@@ -9,6 +9,14 @@ Before going any further, this repository is a fork of the upstream
 Ideally all changes should be made in that upstream repository and not in this
 fork.
 
+We have two protected branches:
+- master: changes get used directly by the buildfarm-server project
+- preprod: changes are for the testing environment
+
+The intention is that we should *always* pull changes from upstream first
+into the *preprod* branch, and then merge them later to the *master* branch
+when ready.
+
 ## How does our (Client Build) setup work
 
 This repository is a fork of [bazel-buildfarm](https://github.com/bazelbuild/bazel-buildfarm),
