@@ -39,7 +39,8 @@ pipelines:
                 entrypoint: 'bazel'
                 args:
                   - 'test'
-                  - '//src/test/java/build/buildfarm:all'
+                  - '--'
+                  - '//src/test/java/build/buildfarm:all -//src/test/java/build/buildfarm:common-tests'
 
   - pipeline: "Master build"
     ref: "master"
