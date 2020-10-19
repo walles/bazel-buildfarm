@@ -6,41 +6,15 @@ pipelines:
     ref: ".*"
     stages:
 
-      - stage: "Building"
+      - stage: "Testing and Building"
         tasks:
-          - task: "Run build"
+          - task: "Run test and build"
             steps:
-              - step: 'Clean'
+              - step: 'Test and Build'
                 action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
-                entrypoint: 'bazel'
+                entrypoint: '/bin/bash'
                 args:
-                  - 'clean'
-
-              - step: 'Build server'
-                action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
-                entrypoint: 'bazel'
-                args:
-                  - 'build'
-                  - '//src/main/java/build/buildfarm:buildfarm-server_deploy.jar'
-
-              - step: 'Build worker'
-                action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
-                entrypoint: 'bazel'
-                args:
-                  - 'build'
-                  - '//src/main/java/build/buildfarm:buildfarm-shard-worker_deploy.jar'
-
-      - stage: "Testing"
-        tasks:
-          - task: "Run tests"
-            steps:
-              - step: 'Test'
-                action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
-                entrypoint: 'bazel'
-                args:
-                  - 'test'
-                  - '--'
-                  - '//src/test/java/build/buildfarm:all -//src/test/java/build/buildfarm:common-tests'
+                  - 'sp-ci-scripts/build.sh'
 
   - pipeline: "Master build"
     ref: "master"
