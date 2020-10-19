@@ -2,51 +2,56 @@
 version: 2
 
 pipelines:
-  - pipeline: "Review build"
-    ref: "pr/.*/merge"
+  - pipeline: "All builds"
+    ref: ".*"
     stages:
-      - stage: "Build and test"
+
+      - stage: "Testing and Building"
         tasks:
-          - task: "build and test"
+          - task: "Run test and build"
             steps:
-              - step: 'build and test'
-                action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
+              - step: 'Test and Build'
+                action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
                 entrypoint: '/bin/bash'
                 args:
-                  - './build.sh'
+                  - 'sp-ci-scripts/build.sh'
+
   - pipeline: "Master build"
     ref: "master"
     stages:
-      - stage: "Build, test and publish"
+      - stage: "Publishing"
         tasks:
-          - task: "build and test"
-            steps:
-              - step: 'build and test'
-                action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
-                entrypoint: '/bin/bash'
-                args:
-                  - './build.sh'
-          - task: "publish"
+          - task: "Publish repo to Artifactory"
             steps:
               - action: "gcr.io/action-containers/git:2.24.1-1"
                 entrypoint: '/bin/bash'
                 args:
-                  - 'zip-and-push-to-artifactory-master.sh'
+                  - 'sp-ci-scripts/zip-and-push-to-artifactory-master.sh'
+
   - pipeline: "Pre-production"
     ref: "preprod"
     stages:
-      - stage: "Build, test and publish"
+      - stage: "Publishing"
         tasks:
-          - task: "build and test"
-            steps:
-              - step: 'build and test'
-                action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
-                entrypoint: '/bin/bash'
-                args:
-                  - './build.sh'
-          - task: "publish"
+          - task: "Publish repo to Artifactory"
             steps:
               - action: "gcr.io/action-containers/git:2.24.1-1"
                 entrypoint: '/bin/bash'
                 args:
-                  - 'zip-and-push-to-artifactory-preprod.sh'
+                  - 'sp-ci-scripts/zip-and-push-to-artifactory-preprod.sh'
+          - task: "Publish worker jar to Artifactory"
+            steps:
+              - action: "gcr.io/action-containers/bash@sha256:26fd32b2085c4ffefbf07f2855c30534b10bd07dbc709a7f89e1836cae4017e6"
+                entrypoint: '/bin/bash'
+                args:
+                  - 'sp-ci-scripts/push-jar-to-artifactory.sh'
+                  - 'buildfarm-server_deploy.jar'
+                  - 'buildfarm-server'
+          - task: "Publish server jar to Artifactory"
+            steps:
+              - action: "gcr.io/action-containers/bash@sha256:26fd32b2085c4ffefbf07f2855c30534b10bd07dbc709a7f89e1836cae4017e6"
+                entrypoint: '/bin/bash'
+                args:
+                  - 'sp-ci-scripts/push-jar-to-artifactory.sh'
+                  - 'buildfarm-shard-worker_deploy.jar'
+                  - 'buildfarm-shard-worker'
