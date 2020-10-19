@@ -11,20 +11,20 @@ pipelines:
           - task: "Run build"
             steps:
               - step: 'Clean'
-                action: "gcr.io/action-containers/bazel@sha256:b2d5295dc9861ec385f4bf282745c05d344237f19fde9be0a1dc3d6b7f0582ba"
+                action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
                 entrypoint: 'bazel'
                 args:
                   - 'clean'
 
               - step: 'Build server'
-                action: "gcr.io/action-containers/bazel@sha256:b2d5295dc9861ec385f4bf282745c05d344237f19fde9be0a1dc3d6b7f0582ba"
+                action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
                 entrypoint: 'bazel'
                 args:
                   - 'build'
                   - '//src/main/java/build/buildfarm:buildfarm-server_deploy.jar'
 
               - step: 'Build worker'
-                action: "gcr.io/action-containers/bazel@sha256:b2d5295dc9861ec385f4bf282745c05d344237f19fde9be0a1dc3d6b7f0582ba"
+                action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
                 entrypoint: 'bazel'
                 args:
                   - 'build'
@@ -35,7 +35,7 @@ pipelines:
           - task: "Run tests"
             steps:
               - step: 'Test'
-                action: "gcr.io/action-containers/bazel@sha256:b2d5295dc9861ec385f4bf282745c05d344237f19fde9be0a1dc3d6b7f0582ba"
+                action: "gcr.io/action-containers/bazel@sha256:8e2530b4e3e022af15d51cc711703b1fab97e9d642daa14a67f3aa70ed492ded"
                 entrypoint: 'bazel'
                 args:
                   - 'test'
