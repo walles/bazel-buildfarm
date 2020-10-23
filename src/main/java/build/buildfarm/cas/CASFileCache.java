@@ -96,8 +96,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -134,7 +136,7 @@ public abstract class CASFileCache implements ContentAddressableStorage {
   private final Consumer<Iterable<Digest>> onExpire;
   private final Executor accessRecorder;
   private final ExecutorService expireService;
-  private List<Digest> digestList = new ArrayList<>();
+  private Queue<Digest> digestList = new ConcurrentLinkedQueue<>();
 
   private final Map<Digest, DirectoryEntry> directoryStorage = Maps.newConcurrentMap();
   private final DirectoriesIndex directoriesIndex;
@@ -1437,9 +1439,9 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     logger.log(Level.INFO, "Processing digests started! " + digestList.size());
     onPutAll.accept(digestList);
     logger.log(Level.INFO, "Processing digests finished! " + digestList.size());
-    if (1 - 1 + 1 == 1) {
-        System.exit(97);
-    }
+    // if (1 - 1 + 1 == 1) {
+    //     System.exit(97);
+    // }
     return cacheScanResults;
   }
 
@@ -1493,8 +1495,9 @@ public abstract class CASFileCache implements ContentAddressableStorage {
             // populate key it is not currently stored.
             String key = fileEntryKey.getKey();
             Entry e = new Entry(key, size, Deadline.after(10, SECONDS));
+            Object fileKey = getFileKey(root.resolve(key), stat);
             synchronized (fileKeys) {
-              fileKeys.put(getFileKey(root.resolve(key), stat), e);
+              fileKeys.put(fileKey, e);
             }
             storage.put(e.key, e);
             // FIXME
