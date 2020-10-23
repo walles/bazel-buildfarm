@@ -116,6 +116,8 @@ import javax.annotation.concurrent.GuardedBy;
 public abstract class CASFileCache implements ContentAddressableStorage {
   private static final Logger logger = Logger.getLogger(CASFileCache.class.getName());
 
+  private volatile long counter_processed_files = 0L;
+
   protected static final String DEFAULT_DIRECTORIES_INDEX_NAME = "directories.sqlite";
   protected static final String DIRECTORIES_INDEX_NAME_MEMORY = ":memory:";
 
@@ -1386,7 +1388,7 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     }
 
     joinThreads(pool, "Scanning Cache Root...", 1, MINUTES);
-
+    logger.log(Level.INFO, "finished! " + counter_processed_files);
     // log information from scanning cache root.
     CacheScanResults cacheScanResults = new CacheScanResults();
     cacheScanResults.computeDirs = computeDirsBuilder.build();
@@ -1450,7 +1452,8 @@ public abstract class CASFileCache implements ContentAddressableStorage {
               fileKeys.put(getFileKey(root.resolve(key), stat), e);
             }
             storage.put(e.key, e);
-            onPut.accept(fileEntryKey.getDigest());
+            // FIXME
+            // onPut.accept(fileEntryKey.getDigest());
             synchronized (CASFileCache.this) {
               if (e.decrementReference(header)) {
                 unreferencedEntryCount++;
@@ -1460,6 +1463,9 @@ public abstract class CASFileCache implements ContentAddressableStorage {
           }
         }
       }
+    }
+    synchronized(this) {
+      counter_processed_files += 1;
     }
   }
 
@@ -1575,7 +1581,7 @@ public abstract class CASFileCache implements ContentAddressableStorage {
       throws InterruptedException {
     pool.shutdown();
     while (!pool.isTerminated()) {
-      logger.log(Level.INFO, message);
+      logger.log(Level.INFO, message + counter_processed_files);
       pool.awaitTermination(timeout, unit);
     }
   }
