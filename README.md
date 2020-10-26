@@ -144,6 +144,16 @@ bazel run //src/main/java/build/buildfarm:buildfarm-server -- --debug=5005 $PWD/
 
 ## Developer Information
 
+### Building
+
+See build.sh
+./bazelisk build //src/main/java/build/buildfarm:all
+
+If you only want one jar, use:
+bazelisk build //src/main/java/build/buildfarm:buildfarm-shard-worker_deploy.jar
+The jar file will be found under the symlinked folders, for example:
+bazel-bin/src/main/java/build/buildfarm/buildfarm-shard-worker_deploy.jar
+
 ### Setting up intelliJ
 
 1. Follow the instructions in https://github.com/bazelbuild/intellij to install the bazel plugin for intelliJ
