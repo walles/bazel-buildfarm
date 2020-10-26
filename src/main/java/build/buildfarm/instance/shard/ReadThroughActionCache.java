@@ -12,24 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package build.buildfarm.common.admin.gcp;
+package build.buildfarm.instance.shard;
 
-import build.buildfarm.common.admin.Admin;
-import build.buildfarm.v1test.GetHostsResult;
+import build.bazel.remote.execution.v2.ActionResult;
+import build.buildfarm.ac.ActionCache;
+import build.buildfarm.common.DigestUtil.ActionKey;
 
-public class GcpAdmin implements Admin {
-  @Override
-  public void terminateHost(String hostId) {
-    throw new UnsupportedOperationException("Not Implemented.");
-  }
+interface ReadThroughActionCache extends ActionCache {
+  void invalidate(ActionKey actionKey);
 
-  @Override
-  public void stopContainer(String hostId, String containerName) {
-    throw new UnsupportedOperationException("Not Implemented.");
-  }
-
-  @Override
-  public GetHostsResult getHosts(String filter, int ageInMinutes, String status) {
-    throw new UnsupportedOperationException("Not Implemented.");
-  }
+  void readThrough(ActionKey actionKey, ActionResult actionResult);
 }

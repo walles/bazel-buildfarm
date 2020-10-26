@@ -92,6 +92,7 @@ class CASFileCacheTest {
 
   private CASFileCache fileCache;
   private Path root;
+  private boolean storeFileDirsIndexInMemory;
   private Map<Digest, ByteString> blobs;
   private ExecutorService putService;
 
@@ -107,8 +108,9 @@ class CASFileCacheTest {
 
   private ConcurrentMap<String, Entry> storage;
 
-  protected CASFileCacheTest(Path fileSystemRoot) {
+  protected CASFileCacheTest(Path fileSystemRoot, boolean storeFileDirsIndexInMemory) {
     this.root = fileSystemRoot.resolve("cache");
+    this.storeFileDirsIndexInMemory = storeFileDirsIndexInMemory;
   }
 
   @Before
@@ -129,6 +131,7 @@ class CASFileCacheTest {
             root,
             /* maxSizeInBytes=*/ 1024,
             /* maxEntrySizeInBytes=*/ 1024,
+            storeFileDirsIndexInMemory,
             DIGEST_UTIL,
             expireService,
             /* accessRecorder=*/ directExecutor(),
@@ -276,13 +279,14 @@ class CASFileCacheTest {
 
     // start the file cache with no files.
     // the cache should start without any initial files in the cache.
-    StartupCacheResults results = fileCache.start();
+    StartupCacheResults results = fileCache.start(false);
 
     // check the startuo results to ensure no files were processed
-    assertThat(results.scan.computeDirs.size()).isEqualTo(0);
-    assertThat(results.scan.deleteFiles.size()).isEqualTo(0);
-    assertThat(results.scan.fileKeys.size()).isEqualTo(0);
-    assertThat(results.invalidDirectories.size()).isEqualTo(0);
+    assertThat(results.load.loadSkipped).isFalse();
+    assertThat(results.load.scan.computeDirs.size()).isEqualTo(0);
+    assertThat(results.load.scan.deleteFiles.size()).isEqualTo(0);
+    assertThat(results.load.scan.fileKeys.size()).isEqualTo(0);
+    assertThat(results.load.invalidDirectories.size()).isEqualTo(0);
   }
 
   @Test
@@ -295,13 +299,14 @@ class CASFileCacheTest {
 
     // start the CAS with a file whose name indicates its a directory
     // the cache should start and consider it a compute directory
-    StartupCacheResults results = fileCache.start();
+    StartupCacheResults results = fileCache.start(false);
 
     // check the startup results to ensure no files were processed
-    assertThat(results.scan.computeDirs.size()).isEqualTo(0);
-    assertThat(results.scan.deleteFiles.size()).isEqualTo(1);
-    assertThat(results.scan.fileKeys.size()).isEqualTo(0);
-    assertThat(results.invalidDirectories.size()).isEqualTo(0);
+    assertThat(results.load.loadSkipped).isFalse();
+    assertThat(results.load.scan.computeDirs.size()).isEqualTo(0);
+    assertThat(results.load.scan.deleteFiles.size()).isEqualTo(1);
+    assertThat(results.load.scan.fileKeys.size()).isEqualTo(0);
+    assertThat(results.load.invalidDirectories.size()).isEqualTo(0);
   }
 
   @Test
@@ -315,19 +320,41 @@ class CASFileCacheTest {
     Files.write(execPath, blob.toByteArray());
     EvenMoreFiles.setReadOnlyPerms(execPath, true);
 
-    StartupCacheResults results = fileCache.start();
+    StartupCacheResults results = fileCache.start(false);
 
     // check the startup results to ensure our two files were processed
-    assertThat(results.scan.computeDirs.size()).isEqualTo(0);
-    assertThat(results.scan.deleteFiles.size()).isEqualTo(0);
-    assertThat(results.scan.fileKeys.size()).isEqualTo(2);
-    assertThat(results.invalidDirectories.size()).isEqualTo(0);
+    assertThat(results.load.loadSkipped).isFalse();
+    assertThat(results.load.scan.computeDirs.size()).isEqualTo(0);
+    assertThat(results.load.scan.deleteFiles.size()).isEqualTo(0);
+    assertThat(results.load.scan.fileKeys.size()).isEqualTo(2);
+    assertThat(results.load.invalidDirectories.size()).isEqualTo(0);
 
     // explicitly not providing blob via blobs, this would throw if fetched from factory
     //
     // FIXME https://github.com/google/truth/issues/285 assertThat(Path) is ambiguous
     assertThat(fileCache.put(blobDigest, false).equals(path)).isTrue();
     assertThat(fileCache.put(blobDigest, true).equals(execPath)).isTrue();
+  }
+
+  @Test
+  public void startSkipsLoadingExistingBlob() throws IOException, InterruptedException {
+    ByteString blob = ByteString.copyFromUtf8("blob");
+    Digest blobDigest = DIGEST_UTIL.compute(blob);
+    Path path = root.resolve(fileCache.getKey(blobDigest, false));
+    Path execPath = root.resolve(fileCache.getKey(blobDigest, true));
+    Files.write(path, blob.toByteArray());
+    EvenMoreFiles.setReadOnlyPerms(path, false);
+    Files.write(execPath, blob.toByteArray());
+    EvenMoreFiles.setReadOnlyPerms(execPath, true);
+
+    StartupCacheResults results = fileCache.start(true);
+
+    // check the startup results to ensure our two files were processed
+    assertThat(results.load.loadSkipped).isTrue();
+    assertThat(results.load.scan.computeDirs.size()).isEqualTo(0);
+    assertThat(results.load.scan.deleteFiles.size()).isEqualTo(0);
+    assertThat(results.load.scan.fileKeys.size()).isEqualTo(0);
+    assertThat(results.load.invalidDirectories.size()).isEqualTo(0);
   }
 
   @Test
@@ -353,7 +380,7 @@ class CASFileCacheTest {
     Files.write(
         invalidExec, validBlob.toByteArray()); // content would match but for invalid exec field
 
-    fileCache.start();
+    fileCache.start(false);
 
     assertThat(!Files.exists(tooFewComponents)).isTrue();
     assertThat(!Files.exists(tooManyComponents)).isTrue();
@@ -838,9 +865,9 @@ class CASFileCacheTest {
   }
 
   @RunWith(JUnit4.class)
-  public static class NativeCASFileCacheTest extends CASFileCacheTest {
-    public NativeCASFileCacheTest() throws IOException {
-      super(createTempDirectory());
+  public static class NativeFileDirsIndexInMemoryCASFileCacheTest extends CASFileCacheTest {
+    public NativeFileDirsIndexInMemoryCASFileCacheTest() throws IOException {
+      super(createTempDirectory(), /* storeFileDirsIndexInMemory= */ true);
     }
 
     private static Path createTempDirectory() throws IOException {
@@ -853,8 +880,23 @@ class CASFileCacheTest {
   }
 
   @RunWith(JUnit4.class)
-  public static class OsXCASFileCacheTest extends CASFileCacheTest {
-    public OsXCASFileCacheTest() {
+  public static class NativeFileDirsIndexInSqliteCASFileCacheTest extends CASFileCacheTest {
+    public NativeFileDirsIndexInSqliteCASFileCacheTest() throws IOException {
+      super(createTempDirectory(), /* storeFileDirsIndexInMemory= */ false);
+    }
+
+    private static Path createTempDirectory() throws IOException {
+      if (Thread.interrupted()) {
+        throw new RuntimeException(new InterruptedException());
+      }
+      Path path = Files.createTempDirectory("native-cas-test");
+      return path;
+    }
+  }
+
+  @RunWith(JUnit4.class)
+  public static class OsXFileDirsIndexInMemoryCASFileCacheTest extends CASFileCacheTest {
+    public OsXFileDirsIndexInMemoryCASFileCacheTest() {
       super(
           Iterables.getFirst(
               Jimfs.newFileSystem(
@@ -863,13 +905,30 @@ class CASFileCacheTest {
                           .setAttributeViews("basic", "owner", "posix", "unix")
                           .build())
                   .getRootDirectories(),
-              null));
+              null),
+          /* storeFileDirsIndexInMemory= */ true);
     }
   }
 
   @RunWith(JUnit4.class)
-  public static class UnixCASFileCacheTest extends CASFileCacheTest {
-    public UnixCASFileCacheTest() {
+  public static class OsXFileDirsIndexInSqliteCASFileCacheTest extends CASFileCacheTest {
+    public OsXFileDirsIndexInSqliteCASFileCacheTest() {
+      super(
+          Iterables.getFirst(
+              Jimfs.newFileSystem(
+                      Configuration.osX()
+                          .toBuilder()
+                          .setAttributeViews("basic", "owner", "posix", "unix")
+                          .build())
+                  .getRootDirectories(),
+              null),
+          /* storeFileDirsIndexInMemory= */ false);
+    }
+  }
+
+  @RunWith(JUnit4.class)
+  public static class UnixFileDirsIndexInMemoryCASFileCacheTest extends CASFileCacheTest {
+    public UnixFileDirsIndexInMemoryCASFileCacheTest() {
       super(
           Iterables.getFirst(
               Jimfs.newFileSystem(
@@ -878,13 +937,30 @@ class CASFileCacheTest {
                           .setAttributeViews("basic", "owner", "posix", "unix")
                           .build())
                   .getRootDirectories(),
-              null));
+              null),
+          /* storeFileDirsIndexInMemory= */ true);
     }
   }
 
   @RunWith(JUnit4.class)
-  public static class WindowsCASFileCacheTest extends CASFileCacheTest {
-    public WindowsCASFileCacheTest() {
+  public static class UnixFileDirsIndexInSqliteCASFileCacheTest extends CASFileCacheTest {
+    public UnixFileDirsIndexInSqliteCASFileCacheTest() {
+      super(
+          Iterables.getFirst(
+              Jimfs.newFileSystem(
+                      Configuration.unix()
+                          .toBuilder()
+                          .setAttributeViews("basic", "owner", "posix", "unix")
+                          .build())
+                  .getRootDirectories(),
+              null),
+          /* storeFileDirsIndexInMemory= */ false);
+    }
+  }
+
+  @RunWith(JUnit4.class)
+  public static class WindowsFileDirsIndexInMemoryCASFileCacheTest extends CASFileCacheTest {
+    public WindowsFileDirsIndexInMemoryCASFileCacheTest() {
       super(
           Iterables.getFirst(
               Jimfs.newFileSystem(
@@ -893,7 +969,24 @@ class CASFileCacheTest {
                           .setAttributeViews("basic", "owner", "dos", "acl", "posix", "user")
                           .build())
                   .getRootDirectories(),
-              null));
+              null),
+          /* storeFileDirsIndexInMemory= */ true);
+    }
+  }
+
+  @RunWith(JUnit4.class)
+  public static class WindowsFileDirsIndexInSqliteCASFileCacheTest extends CASFileCacheTest {
+    public WindowsFileDirsIndexInSqliteCASFileCacheTest() {
+      super(
+          Iterables.getFirst(
+              Jimfs.newFileSystem(
+                      Configuration.windows()
+                          .toBuilder()
+                          .setAttributeViews("basic", "owner", "dos", "acl", "posix", "user")
+                          .build())
+                  .getRootDirectories(),
+              null),
+          /* storeFileDirsIndexInMemory= */ false);
     }
   }
 }

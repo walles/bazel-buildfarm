@@ -51,10 +51,12 @@ public class JedisClusterFactory {
   ///
   public static Supplier<JedisCluster> create(RedisShardBackplaneConfig config)
       throws ConfigurationException {
+    // null password is required to elicit no auth in jedis
     return createJedisClusterFactory(
         parseUri(config.getRedisUri()),
         config.getTimeout(),
         config.getMaxAttempts(),
+        config.getRedisPassword().isEmpty() ? null : config.getRedisPassword(),
         createJedisPoolConfig(config));
   }
   ///
@@ -129,6 +131,7 @@ public class JedisClusterFactory {
       node.del(key);
     }
   }
+
   ///
   /// @brief   Create a jedis cluster instance.
   /// @details Use the URI and pool information to connect to a redis cluster
@@ -154,6 +157,7 @@ public class JedisClusterFactory {
       }
     };
   }
+
   ///
   /// @brief   Create a jedis cluster instance with connection settings.
   /// @details Use the URI, pool and connection information to connect to a redis cluster
@@ -166,12 +170,14 @@ public class JedisClusterFactory {
   /// @note    Suggested return identifier: jedis.
   ///
   private static Supplier<JedisCluster> createJedisClusterFactory(
-      URI redisUri, int timeout, int maxAttempts, JedisPoolConfig poolConfig) {
+      URI redisUri, int timeout, int maxAttempts, String password, JedisPoolConfig poolConfig) {
     return () ->
         new JedisCluster(
             new HostAndPort(redisUri.getHost(), redisUri.getPort()),
-            Integer.max(2000, timeout),
+            /* connectionTimeout=*/ Integer.max(2000, timeout),
+            /* soTimeout=*/ Integer.max(2000, timeout),
             Integer.max(5, maxAttempts),
+            password,
             poolConfig);
   }
   ///
