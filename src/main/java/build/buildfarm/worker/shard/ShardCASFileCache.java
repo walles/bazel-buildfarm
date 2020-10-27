@@ -35,22 +35,26 @@ class ShardCASFileCache extends CASFileCache {
       Path root,
       long maxSizeInBytes,
       long maxEntrySizeInBytes,
+      boolean storeFileDirsIndexInMemory,
       DigestUtil digestUtil,
       ExecutorService expireService,
       Executor accessRecorder,
       Consumer<Digest> onPut,
+      Consumer<Iterable<Digest>> onPutAll,
       Consumer<Iterable<Digest>> onExpire,
       ContentAddressableStorage delegate) {
     super(
         root,
         maxSizeInBytes,
         maxEntrySizeInBytes,
+        storeFileDirsIndexInMemory,
         digestUtil,
         expireService,
         accessRecorder,
         /* storage=*/ Maps.newConcurrentMap(),
         DEFAULT_DIRECTORIES_INDEX_NAME,
         onPut,
+        onPutAll,
         onExpire,
         delegate);
     this.inputStreamFactory =

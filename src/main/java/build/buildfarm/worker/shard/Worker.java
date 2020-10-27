@@ -71,11 +71,15 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.devtools.common.options.OptionsParser;
 import com.google.longrunning.Operation;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Duration;
 import com.google.protobuf.TextFormat;
+import com.google.protobuf.util.Durations;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.Status;
 import io.grpc.Status.Code;
+import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
+import io.grpc.services.HealthStatusManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -109,6 +113,7 @@ public class Worker extends LoggingMain {
 
   private final ShardWorkerConfig config;
   private final ShardWorkerInstance instance;
+  private final HealthStatusManager healthStatusManager;
   private final Server server;
   private final Path root;
   private final DigestUtil digestUtil;
@@ -286,7 +291,7 @@ public class Worker extends LoggingMain {
         break;
     }
 
-    workerStubs = WorkerStubs.create(digestUtil);
+    workerStubs = WorkerStubs.create(digestUtil, getGrpcTimeout(config));
 
     ExecutorService removeDirectoryService =
         newFixedThreadPool(
@@ -368,8 +373,10 @@ public class Worker extends LoggingMain {
     pipeline.add(executeActionStage, 2);
     pipeline.add(reportResultStage, 1);
 
+    healthStatusManager = new HealthStatusManager();
     server =
         serverBuilder
+            .addService(healthStatusManager.getHealthService())
             .addService(
                 new ContentAddressableStorageService(
                     instances, /* deadlineAfter=*/ 1, DAYS, /* requestLogLevel=*/ FINER))
@@ -384,6 +391,25 @@ public class Worker extends LoggingMain {
 
   public static int KBtoBytes(int sizeKb) {
     return sizeKb * 1024;
+  }
+
+  private static Duration getGrpcTimeout(ShardWorkerConfig config) {
+
+    // return the configured
+    if (config.getShardWorkerInstanceConfig().hasGrpcTimeout()) {
+      Duration configured = config.getShardWorkerInstanceConfig().getGrpcTimeout();
+      if (configured.getSeconds() > 0 || configured.getNanos() > 0) {
+        return configured;
+      }
+    }
+
+    // return a default
+    Duration defaultDuration = Durations.fromSeconds(60);
+    logger.log(
+        INFO,
+        String.format(
+            "grpc timeout not configured.  Setting to: " + defaultDuration.getSeconds() + "s"));
+    return defaultDuration;
   }
 
   private ListenableFuture<Long> streamIntoWriteFuture(InputStream in, Write write, Digest digest)
@@ -430,7 +456,8 @@ public class Worker extends LoggingMain {
                 }
                 long committedSize = write.getCommittedSize();
                 if (committedSize != digest.getSizeBytes()) {
-                  logger.warning(
+                  logger.log(
+                      Level.WARNING,
                       format(
                           "committed size %d did not match expectation for digestUtil",
                           committedSize));
@@ -573,10 +600,12 @@ public class Worker extends LoggingMain {
             root.resolve(getValidFilesystemCASPath(fsCASConfig, root)),
             fsCASConfig.getMaxSizeBytes(),
             fsCASConfig.getMaxEntrySizeBytes(),
+            fsCASConfig.getFileDirectoriesIndexInMemory(),
             digestUtil,
             removeDirectoryService,
             accessRecorder,
             this::onStoragePut,
+            this::onStoragePutAll,
             delegate == null ? this::onStorageExpire : (digests) -> {},
             delegate);
     }
@@ -628,6 +657,8 @@ public class Worker extends LoggingMain {
         interrupted = true;
       }
     }
+    healthStatusManager.setStatus(
+        HealthStatusManager.SERVICE_NAME_ALL_SERVICES, ServingStatus.NOT_SERVING);
     if (execFileSystem != null) {
       logger.log(INFO, "Stopping exec filesystem");
       execFileSystem.stop();
@@ -672,6 +703,19 @@ public class Worker extends LoggingMain {
       throw Status.fromThrowable(e).asRuntimeException();
     }
   }
+
+  private void onStoragePutAll(Iterable<Digest> digests) {
+    try {
+
+      // if the worker is a CAS member, it can send/modify blobs in the backplane.
+      if (isCasShard) {
+        backplane.addBlobsLocation(digests, config.getPublicName());
+      }
+    } catch (IOException e) {
+      throw Status.fromThrowable(e).asRuntimeException();
+    }
+  }
+
 
   private void onStorageExpire(Iterable<Digest> digests) {
     if (isCasShard) {
@@ -790,10 +834,13 @@ public class Worker extends LoggingMain {
 
       removeWorker(config.getPublicName());
 
-      execFileSystem.start((digests) -> addBlobsLocation(digests, config.getPublicName()));
+      boolean skipLoad = config.getCasList().get(0).getSkipLoad();
+      execFileSystem.start(
+          (digests) -> addBlobsLocation(digests, config.getPublicName()), skipLoad);
 
       server.start();
-
+      healthStatusManager.setStatus(
+          HealthStatusManager.SERVICE_NAME_ALL_SERVICES, ServingStatus.SERVING);
       // Not all workers need to be registered and visible in the backplane.
       // For example, a GPU worker may wish to perform work that we do not want to cache locally for
       // other workers.

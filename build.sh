@@ -2,7 +2,9 @@
 set -ex
 
 apt-get update -y && apt-get upgrade -y
-apt-get install -y curl unzip g++
+apt-get install -y curl unzip g++ git python3
+
+/bin/cp /usr/bin/python3 /usr/local/bin/python
 
 curl -sS -m300 -Lo bazelisk https://artifactory.spotify.net/artifactory/client-infrastructure/buildtools/bazelisk/1.2.1_2/bazelisk-linux-amd64
 chmod 755 bazelisk
