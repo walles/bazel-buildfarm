@@ -91,7 +91,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -130,11 +129,9 @@ public abstract class CASFileCache implements ContentAddressableStorage {
   private final DigestUtil digestUtil;
   private final ConcurrentMap<String, Entry> storage;
   private final Consumer<Digest> onPut;
-  private final Consumer<Iterable<Digest>> onPutAll;
   private final Consumer<Iterable<Digest>> onExpire;
   private final Executor accessRecorder;
   private final ExecutorService expireService;
-  private List<Digest> digestList = new ArrayList<>();
 
   private final Map<Digest, DirectoryEntry> directoryStorage = Maps.newConcurrentMap();
   private final DirectoriesIndex directoriesIndex;
@@ -273,7 +270,6 @@ public abstract class CASFileCache implements ContentAddressableStorage {
         /* storage=*/ Maps.newConcurrentMap(),
         /* directoriesIndexDbName=*/ DEFAULT_DIRECTORIES_INDEX_NAME,
         /* onPut=*/ (digest) -> {},
-        /* onPutAll=*/ (digest) -> {},
         /* onExpire=*/ (digests) -> {},
         /* delegate=*/ null);
   }
@@ -289,7 +285,6 @@ public abstract class CASFileCache implements ContentAddressableStorage {
       ConcurrentMap<String, Entry> storage,
       String directoriesIndexDbName,
       Consumer<Digest> onPut,
-      Consumer<Iterable<Digest>> onPutAll,
       Consumer<Iterable<Digest>> onExpire,
       @Nullable ContentAddressableStorage delegate) {
     this.root = root;
@@ -300,7 +295,6 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     this.accessRecorder = accessRecorder;
     this.storage = storage;
     this.onPut = onPut;
-    this.onPutAll = onPutAll;
     this.onExpire = onExpire;
     this.delegate = delegate;
     this.directoriesIndexDbName = directoriesIndexDbName;
@@ -1433,10 +1427,6 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     cacheScanResults.computeDirs = computeDirsBuilder.build();
     cacheScanResults.deleteFiles = deleteFilesBuilder.build();
     cacheScanResults.fileKeys = fileKeysBuilder.build();
-
-    logger.log(Level.INFO, "Processing digests started!");
-    onPutAll.accept(digestList);
-    logger.log(Level.INFO, "Processing digests finished!");
 
     return cacheScanResults;
   }
