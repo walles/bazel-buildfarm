@@ -1437,9 +1437,7 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     logger.log(Level.INFO, "Processing digests started!");
     onPutAll.accept(digestList);
     logger.log(Level.INFO, "Processing digests finished!");
-    if (1 - 1 + 1 == 1) {
-        System.exit(97);
-    }
+
     return cacheScanResults;
   }
 
