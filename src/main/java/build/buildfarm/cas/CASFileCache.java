@@ -659,6 +659,7 @@ public abstract class CASFileCache implements ContentAddressableStorage {
   }
 
   boolean completeWrite(Digest digest) {
+    // this should be traded for an event emission
     try {
       onPut.accept(digest);
     } catch (RuntimeException e) {
@@ -1299,13 +1300,13 @@ public abstract class CASFileCache implements ContentAddressableStorage {
    * and will scale in cost with the number of files already present.
    */
   public StartupCacheResults start(
-      Consumer<Digest> onPut, ExecutorService removeDirectoryService, boolean skipLoad)
+      Consumer<Digest> onStartPut, ExecutorService removeDirectoryService, boolean skipLoad)
       throws IOException, InterruptedException {
 
     // start delegate if it exists
     if (delegate != null && delegate instanceof CASFileCache) {
       CASFileCache fileCacheDelegate = (CASFileCache) delegate;
-      fileCacheDelegate.start(onPut, removeDirectoryService, skipLoad);
+      fileCacheDelegate.start(onStartPut, removeDirectoryService, skipLoad);
     }
 
     logger.log(Level.INFO, "Initializing cache at: " + root);
@@ -1318,7 +1319,7 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     if (!skipLoad) {
       Files.createDirectories(root);
       FileStore fileStore = Files.getFileStore(root);
-      loadResults = loadCache(fileStore, removeDirectoryService);
+      loadResults = loadCache(onStartPut, fileStore, removeDirectoryService);
     }
 
     // Skip loading the cache and ensure its empty
@@ -1345,14 +1346,15 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     return startupResults;
   }
 
-  private CacheLoadResults loadCache(FileStore fileStore, ExecutorService removeDirectoryService)
+  private CacheLoadResults loadCache(
+      Consumer<Digest> onStartPut, FileStore fileStore, ExecutorService removeDirectoryService)
       throws IOException, InterruptedException {
 
     CacheLoadResults results = new CacheLoadResults();
 
     // Phase 1: Scan
     // build scan cache results by analyzing each file on the root.
-    results.scan = scanRoot();
+    results.scan = scanRoot(onStartPut);
     LogCacheScanResults(results.scan);
     deleteInvalidFileContent(results.scan.deleteFiles, removeDirectoryService);
 
@@ -1395,7 +1397,8 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     logger.log(Level.INFO, "{\"invalid dirs\": " + invalidDirectories.size() + "}");
   }
 
-  private CacheScanResults scanRoot() throws IOException, InterruptedException {
+  private CacheScanResults scanRoot(Consumer<Digest> onStartPut)
+      throws IOException, InterruptedException {
     // create thread pool
     int nThreads = Runtime.getRuntime().availableProcessors();
     String threadNameFormat = "scan-cache-pool-%d";
@@ -1413,7 +1416,8 @@ public abstract class CASFileCache implements ContentAddressableStorage {
       pool.execute(
           () -> {
             try {
-              processRootFile(file, computeDirsBuilder, deleteFilesBuilder, fileKeysBuilder);
+              processRootFile(
+                  onStartPut, file, computeDirsBuilder, deleteFilesBuilder, fileKeysBuilder);
             } catch (Exception e) {
               logger.log(Level.SEVERE, "error reading file " + file.toString(), e);
             }
@@ -1432,6 +1436,7 @@ public abstract class CASFileCache implements ContentAddressableStorage {
   }
 
   private void processRootFile(
+      Consumer<Digest> onStartPut,
       Path file,
       ImmutableList.Builder<Path> computeDirs,
       ImmutableList.Builder<Path> deleteFiles,
@@ -1481,12 +1486,12 @@ public abstract class CASFileCache implements ContentAddressableStorage {
             // populate key it is not currently stored.
             String key = fileEntryKey.getKey();
             Entry e = new Entry(key, size, Deadline.after(10, SECONDS));
+            Object fileKey = getFileKey(root.resolve(key), stat);
             synchronized (fileKeys) {
-              fileKeys.put(getFileKey(root.resolve(key), stat), e);
+              fileKeys.put(fileKey, e);
             }
             storage.put(e.key, e);
-            // FIXME
-            // onPut.accept(fileEntryKey.getDigest());
+            onStartPut.accept(fileEntryKey.getDigest());
             synchronized (CASFileCache.this) {
               if (e.decrementReference(header)) {
                 unreferencedEntryCount++;
