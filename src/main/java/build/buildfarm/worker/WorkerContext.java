@@ -41,9 +41,13 @@ import java.util.Map;
 public interface WorkerContext {
   interface IOResource extends AutoCloseable {
     void close() throws IOException;
+
+    boolean isReferenced();
   }
 
   String getName();
+
+  boolean shouldErrorOperationOnRemainingResources();
 
   Poller createPoller(String name, QueueEntry queueEntry, ExecutionStage.Value stage);
 

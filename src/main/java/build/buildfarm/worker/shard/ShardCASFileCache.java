@@ -40,7 +40,6 @@ class ShardCASFileCache extends CASFileCache {
       ExecutorService expireService,
       Executor accessRecorder,
       Consumer<Digest> onPut,
-      Consumer<Iterable<Digest>> onPutAll,
       Consumer<Iterable<Digest>> onExpire,
       ContentAddressableStorage delegate) {
     super(
@@ -54,7 +53,6 @@ class ShardCASFileCache extends CASFileCache {
         /* storage=*/ Maps.newConcurrentMap(),
         DEFAULT_DIRECTORIES_INDEX_NAME,
         onPut,
-        onPutAll,
         onExpire,
         delegate);
     this.inputStreamFactory =

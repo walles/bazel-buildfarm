@@ -98,8 +98,6 @@ class CASFileCacheTest {
 
   @Mock private Consumer<Digest> onPut;
 
-  @Mock private Consumer<Iterable<Digest>> onPutAll;
-
   @Mock private Consumer<Iterable<Digest>> onExpire;
 
   @Mock private ContentAddressableStorage delegate;
@@ -138,7 +136,6 @@ class CASFileCacheTest {
             storage,
             /* directoriesIndexDbName=*/ ":memory:",
             onPut,
-            onPutAll,
             onExpire,
             delegate) {
           @Override

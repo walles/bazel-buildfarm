@@ -532,6 +532,7 @@ java_library(
     deps = [
         ":worker",
         "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
     ],
 )
 
@@ -805,6 +806,29 @@ java_binary(
     name = "bf-hist",
     srcs = ["Hist.java"],
     main_class = "build.buildfarm.Hist",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":common",
+        ":instance",
+        ":stub-instance",
+        "@googleapis//:google_longrunning_operations_java_proto",
+        "@googleapis//:google_rpc_code_java_proto",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_protobuf_protobuf_java",
+        "@maven//:io_grpc_grpc_api",
+        "@maven//:io_grpc_grpc_context",
+        "@maven//:io_grpc_grpc_core",
+        "@maven//:io_grpc_grpc_netty",
+        "@maven//:io_grpc_grpc_protobuf",
+        "@maven//:io_grpc_grpc_stub",
+        "@remote_apis//:build_bazel_remote_execution_v2_remote_execution_java_proto",
+    ],
+)
+
+java_binary(
+    name = "bf-index-worker",
+    srcs = ["IndexWorker.java"],
+    main_class = "build.buildfarm.IndexWorker",
     visibility = ["//visibility:public"],
     deps = [
         ":common",

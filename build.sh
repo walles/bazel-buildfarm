@@ -2,7 +2,7 @@
 set -ex
 
 apt-get update -y && apt-get upgrade -y
-apt-get install -y curl unzip g++ git python3
+apt-get install -y curl unzip g++ git python3 python3-distutils
 
 /bin/cp /usr/bin/python3 /usr/local/bin/python
 
