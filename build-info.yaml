@@ -10,6 +10,7 @@ pipelines:
           - task: "build and test"
             steps:
               - step: 'build and test'
+                skipCertificatesMount: true
                 action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
                 entrypoint: '/bin/bash'
                 args:
@@ -22,6 +23,7 @@ pipelines:
           - task: "build and test"
             steps:
               - step: 'build and test'
+                skipCertificatesMount: true
                 action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
                 entrypoint: '/bin/bash'
                 args:
@@ -40,6 +42,7 @@ pipelines:
           - task: "build and test"
             steps:
               - step: 'build and test'
+                skipCertificatesMount: true
                 action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
                 entrypoint: '/bin/bash'
                 args:
