@@ -1426,7 +1426,7 @@ public abstract class CASFileCache implements ContentAddressableStorage {
           });
     }
 
-    joinThreads(pool, "Scanning Cache Root... ", 1, MINUTES);
+    joinThreads(pool, "Scanning Cache Root...", 1, MINUTES);
     logger.log(Level.INFO, "finished! " + counter_processed_files);
     // log information from scanning cache root.
     CacheScanResults cacheScanResults = new CacheScanResults();
@@ -1434,9 +1434,9 @@ public abstract class CASFileCache implements ContentAddressableStorage {
     cacheScanResults.deleteFiles = deleteFilesBuilder.build();
     cacheScanResults.fileKeys = fileKeysBuilder.build();
 
-    logger.log(Level.INFO, "Processing digests started! " + digestList.size());
+    logger.log(Level.INFO, "Processing digests started!");
     onPutAll.accept(digestList);
-    logger.log(Level.INFO, "Processing digests finished! " + digestList.size());
+    logger.log(Level.INFO, "Processing digests finished!");
     if (1 - 1 + 1 == 1) {
         System.exit(97);
     }
@@ -1499,7 +1499,6 @@ public abstract class CASFileCache implements ContentAddressableStorage {
             storage.put(e.key, e);
             // FIXME
             // onPut.accept(fileEntryKey.getDigest());
-            digestList.add(fileEntryKey.getDigest());
             synchronized (CASFileCache.this) {
               if (e.decrementReference(header)) {
                 unreferencedEntryCount++;
