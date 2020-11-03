@@ -11,7 +11,7 @@ pipelines:
             steps:
               - step: 'build and test'
                 skipCertificatesMount: true
-                action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
+                action: "gcr.io/spotify-base-images/bionic-java11:2020.07"
                 entrypoint: '/bin/bash'
                 args:
                   - './build.sh'
@@ -24,7 +24,7 @@ pipelines:
             steps:
               - step: 'build and test'
                 skipCertificatesMount: true
-                action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
+                action: "gcr.io/spotify-base-images/bionic-java11:2020.07"
                 entrypoint: '/bin/bash'
                 args:
                   - './build.sh'
@@ -43,7 +43,7 @@ pipelines:
             steps:
               - step: 'build and test'
                 skipCertificatesMount: true
-                action: "gcr.io/spotify-base-images/bionic-java8:2020.07"
+                action: "gcr.io/spotify-base-images/bionic-java11:2020.07"
                 entrypoint: '/bin/bash'
                 args:
                   - './build.sh'
