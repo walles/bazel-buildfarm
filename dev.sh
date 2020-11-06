@@ -6,10 +6,6 @@ bazelisk build //src/main/java/build/buildfarm:buildfarm-shard-worker_deploy.jar
 chmod 755 bazel-bin/src/main/java/build/buildfarm/buildfarm-shard-worker_deploy.jar
 scp bazel-bin/src/main/java/build/buildfarm/buildfarm-shard-worker_deploy.jar gew1-preprodbuildfarmworker-d-076x.gew1.spotify.net:~/
 
-set +ex
-ssh -A gew1-preprodbuildfarmworker-d-076x.gew1.spotify.net sudo pkill -9 -f buildfarm-shard-worker_deploy.jar
-set -ex
-
 # on the remote:
 # disco role preprodbuildfarmworker to pick one instance
 # systemctl stop helios-agent.service

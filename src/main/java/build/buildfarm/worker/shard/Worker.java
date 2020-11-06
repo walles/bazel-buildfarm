@@ -354,6 +354,7 @@ public class Worker extends LoggingMain {
             config.getLimitExecution(),
             config.getLimitGlobalExecution(),
             config.getOnlyMulticoreTests(),
+            config.getErrorOperationRemainingResources(),
             Suppliers.ofInstance(writer));
 
     PipelineStage completeStage =
@@ -605,7 +606,6 @@ public class Worker extends LoggingMain {
             removeDirectoryService,
             accessRecorder,
             this::onStoragePut,
-            this::onStoragePutAll,
             delegate == null ? this::onStorageExpire : (digests) -> {},
             delegate);
     }
@@ -703,19 +703,6 @@ public class Worker extends LoggingMain {
       throw Status.fromThrowable(e).asRuntimeException();
     }
   }
-
-  private void onStoragePutAll(Iterable<Digest> digests) {
-    try {
-
-      // if the worker is a CAS member, it can send/modify blobs in the backplane.
-      if (isCasShard) {
-        backplane.addBlobsLocation(digests, config.getPublicName());
-      }
-    } catch (IOException e) {
-      throw Status.fromThrowable(e).asRuntimeException();
-    }
-  }
-
 
   private void onStorageExpire(Iterable<Digest> digests) {
     if (isCasShard) {
