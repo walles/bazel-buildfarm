@@ -158,9 +158,9 @@ public class JedisClusterFactory {
       }
       return new JedisCluster(
           hostsAndPorts,
-          /* connectionTimeout=*/ Integer.max(2000, timeout),
-          /* soTimeout=*/ Integer.max(2000, timeout),
-          Integer.max(5, maxAttempts),
+          /* connectionTimeout=*/ Integer.max(20000, timeout),
+          /* soTimeout=*/ Integer.max(20000, timeout),
+          Integer.max(10, maxAttempts),
           password,
           poolConfig);
     };
